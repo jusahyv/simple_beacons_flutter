@@ -108,6 +108,17 @@ class BeaconsPlugin {
     printDebugMessage(result, 2);
   }
 
+  static Future<void> setForegroundServiceNotification(String title, String content) async {
+    final String? result = await channel.invokeMethod(
+      'setForegroundServiceNotification',
+      <String, dynamic>{
+        'title': title,
+        'content': content
+      },
+    );
+    printDebugMessage(result, 2);
+  }
+
   static listenToBeacons(StreamController controller) async {
     event_channel.receiveBroadcastStream().listen((dynamic event) {
       printDebugMessage('Received: $event', 2);

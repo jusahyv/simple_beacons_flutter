@@ -49,6 +49,12 @@ open class BeaconHelper(var context: Context) : BeaconConsumer, BeaconsPlugin.Co
 
         @JvmStatic
         var backgroundBetweenScanPeriod = 0L
+
+        @JvmStatic
+        var serviceTitle = "Beacons Service"
+
+        @JvmStatic
+        var serviceContent = "Looking for nearby beacons"
     }
 
     private val TAG = "BeaconHelper"

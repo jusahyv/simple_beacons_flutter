@@ -59,6 +59,10 @@ fun getReadableTime(timestamp: Long): String {
         return "No Time Provided!"
 }
 
+fun Service.updateNotification(channelId: String, channelName: String, title: String, content: String) {
+    // use same builder as other one
+}
+
 fun Service.createNotification(channelId: String, channelName: String, wakeLockTAG: String, title: String, content: String) {
     createNotificationChannel(channelId, channelName)
     val imageId = resources.getIdentifier("ic_launcher", "mipmap", packageName)
