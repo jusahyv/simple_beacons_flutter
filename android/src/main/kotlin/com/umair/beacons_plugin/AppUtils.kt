@@ -16,6 +16,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 val PREF_PERMISSION_DIALOG_SHOWN = "dialog_shown"
+val FOREGROUND_SERVICE_ID = 18237
 
 private fun PackageManager.missingSystemFeature(name: String): Boolean = !hasSystemFeature(name)
 
@@ -59,10 +60,6 @@ fun getReadableTime(timestamp: Long): String {
         return "No Time Provided!"
 }
 
-fun Service.updateNotification(channelId: String, channelName: String, title: String, content: String) {
-    // use same builder as other one
-}
-
 fun Service.createNotification(channelId: String, channelName: String, wakeLockTAG: String, title: String, content: String) {
     createNotificationChannel(channelId, channelName)
     val imageId = resources.getIdentifier("ic_launcher", "mipmap", packageName)
@@ -83,7 +80,7 @@ fun Service.createNotification(channelId: String, channelName: String, wakeLockT
             acquire(360000)
         }
     }
-    startForeground(18237, notification)
+    startForeground(FOREGROUND_SERVICE_ID, notification)
 }
 
 private fun Service.createNotificationChannel(channelId: String, channelName: String) {

@@ -16,12 +16,30 @@ class BeaconsDiscoveryService : Service() {
         private val TAG = "BeaconsDiscoveryService"
 
         @JvmStatic
+        private val NOTIFICATION_ID = TAG + "_ID"
+
+        @JvmStatic
         private var serviceRunning = false
+
+        @JvmStatic
+        private var serviceNotificationTitle = "Beacons Service"
+
+        @JvmStatic
+        private var serviceNotificationContent = "Looking for nearby beacons"
+
+        @JvmStatic
+        private var instance: BeaconsDiscoveryService? = null;
+
+        fun setForegroundServiceNotification(title: String, content: String) {
+            serviceNotificationTitle = title
+            serviceNotificationContent = content
+        }
     }
 
     override fun onCreate() {
         super.onCreate()
         beaconHelper = BeaconHelper(this)
+        instance = this
 
         BeaconsPlugin.messenger?.let {
             Log.i(TAG, "$TAG service running. Send Callback")
@@ -35,9 +53,8 @@ class BeaconsDiscoveryService : Service() {
         return null
     }
 
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        createNotification("${TAG}_ID", TAG, "${TAG}::WAKE_LOCK", BeaconHelper.serviceTitle, BeaconHelper.serviceContent)
+        createNotification("${TAG}_ID", TAG, "${TAG}::WAKE_LOCK", serviceNotificationTitle, serviceNotificationContent)
         acquireWakeLock(intent, "${TAG}::WAKE_LOCK")
         return START_STICKY
     }
