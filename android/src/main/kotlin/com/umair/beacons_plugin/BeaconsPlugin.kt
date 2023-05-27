@@ -19,7 +19,7 @@ import timber.log.Timber
 
 /** BeaconsPlugin */
 class BeaconsPlugin : FlutterPlugin, ActivityAware,
-    PluginRegistry.RequestPermissionsResultListener {
+        PluginRegistry.RequestPermissionsResultListener {
 
     private var context: Context? = null
 
@@ -27,8 +27,8 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
         Timber.i("onAttachedToEngine")
         messenger = flutterPluginBinding.binaryMessenger
         setUpPluginMethods(
-            flutterPluginBinding.applicationContext,
-            flutterPluginBinding.binaryMessenger
+                flutterPluginBinding.applicationContext,
+                flutterPluginBinding.binaryMessenger
         )
         context = flutterPluginBinding.applicationContext
         beaconHelper = BeaconHelper(flutterPluginBinding.applicationContext)
@@ -46,10 +46,11 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
         private var event_channel: EventChannel? = null
         private var currentActivity: Activity? = null
         private var beaconHelper: BeaconHelper? = null
+        private var callBack: PluginImpl? = null
 
         private var defaultPermissionDialogTitle = "This app needs background location access"
         private var defaultPermissionDialogMessage =
-            "Please grant location access so this app can detect beacons in the background."
+                "Please grant location access so this app can detect beacons in the background."
 
         @JvmStatic
         internal var messenger: BinaryMessenger? = null
@@ -92,13 +93,18 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
 
             channel = MethodChannel(messenger, "beacons_plugin")
             notifyIfPermissionsGranted(context)
+
             channel?.setMethodCallHandler { call, result ->
+                // Taken from notifyIfPermissionsGranted to allow permission handling from the outside
+                initCallback()
+
                 when {
                     call.method == "startMonitoring" -> {
                         stopService = false
                         callBack?.startScanning()
                         result.success("Started scanning Beacons.")
                     }
+
                     call.method == "stopMonitoring" -> {
 
                         if (runInBackground) {
@@ -111,18 +117,22 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
                         callBack?.stopMonitoringBeacons()
                         result.success("Stopped scanning Beacons.")
                     }
+
                     call.method == "addRegion" -> {
                         callBack?.addRegion(call, result)
                     }
+
                     call.method == "clearRegions" -> {
                         callBack?.clearRegions(call, result)
                     }
+
                     call.method == "runInBackground" -> {
                         call.argument<Boolean>("background")?.let {
                             runInBackground = it
                         }
                         result.success("App will run in background? $runInBackground")
                     }
+
                     call.method == "clearDisclosureDialogShowFlag" -> {
                         call.argument<Boolean>("clearFlag")?.let {
                             if (it) {
@@ -134,6 +144,7 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
                             }
                         }
                     }
+
                     call.method == "setDisclosureDialogMessage" -> {
                         call.argument<String>("title")?.let {
                             defaultPermissionDialogTitle = it
@@ -144,12 +155,14 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
                         requestPermission()
                         result.success("Disclosure message Set: $defaultPermissionDialogMessage")
                     }
+
                     call.method == "addBeaconLayoutForAndroid" -> {
                         call.argument<String>("layout")?.let {
                             callBack?.addBeaconLayout(it)
                             result.success("Beacon layout added: $it")
                         }
                     }
+
                     call.method == "setForegroundScanPeriodForAndroid" -> {
                         var foregroundScanPeriod = 1100L
                         var foregroundBetweenScanPeriod = 0L
@@ -164,11 +177,12 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
                             }
                         }
                         callBack?.setForegroundScanPeriod(
-                            foregroundScanPeriod = foregroundScanPeriod,
-                            foregroundBetweenScanPeriod = foregroundBetweenScanPeriod
+                                foregroundScanPeriod = foregroundScanPeriod,
+                                foregroundBetweenScanPeriod = foregroundBetweenScanPeriod
                         )
                         result.success("setForegroundScanPeriod updated.")
                     }
+
                     call.method == "setBackgroundScanPeriodForAndroid" -> {
                         var backgroundScanPeriod = 1100L
                         var backgroundBetweenScanPeriod = 0L
@@ -183,17 +197,19 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
                             }
                         }
                         callBack?.setBackgroundScanPeriod(
-                            backgroundScanPeriod = backgroundScanPeriod,
-                            backgroundBetweenScanPeriod = backgroundBetweenScanPeriod
+                                backgroundScanPeriod = backgroundScanPeriod,
+                                backgroundBetweenScanPeriod = backgroundBetweenScanPeriod
                         )
                         result.success("setBackgroundScanPeriod updated.")
                     }
+
                     call.method == "setForegroundServiceNotification" -> {
                         val title = call.argument<String>("title")!!; // Cannot be null as it is required in the Dart side.
                         val content = call.argument<String>("content")!!;
                         BeaconsDiscoveryService.setForegroundServiceNotification(title, content);
                         result.success("setForegroundServiceNotification updated.")
                     }
+
                     else -> result.notImplemented()
                 }
             }
@@ -220,12 +236,12 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
         @JvmStatic
         fun permissionsGranted(context: Context): Boolean {
             return ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED &&
                     ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
+                            context,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
                     ) == PackageManager.PERMISSION_GRANTED
         }
 
@@ -237,9 +253,13 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
                 return
             }
 
-            this.callBack = beaconHelper
-
+            initCallback()
             sendBLEScannerReadyCallback()
+        }
+
+        @JvmStatic
+        private fun initCallback(){
+            this.callBack = beaconHelper
         }
 
 
@@ -258,24 +278,24 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         currentActivity?.let {
                             ActivityCompat.requestPermissions(
-                                it,
-                                arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                                ),
-                                REQUEST_LOCATION_PERMISSIONS
+                                    it,
+                                    arrayOf(
+                                            Manifest.permission.ACCESS_FINE_LOCATION,
+                                            Manifest.permission.ACCESS_COARSE_LOCATION,
+                                            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                                    ),
+                                    REQUEST_LOCATION_PERMISSIONS
                             )
                         }
                     } else {
                         currentActivity?.let {
                             ActivityCompat.requestPermissions(
-                                it,
-                                arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                                ),
-                                REQUEST_LOCATION_PERMISSIONS
+                                    it,
+                                    arrayOf(
+                                            Manifest.permission.ACCESS_FINE_LOCATION,
+                                            Manifest.permission.ACCESS_COARSE_LOCATION
+                                    ),
+                                    REQUEST_LOCATION_PERMISSIONS
                             )
                         }
                     }
@@ -294,7 +314,7 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         //if (it.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
                         val builder: AlertDialog.Builder =
-                            AlertDialog.Builder(it)
+                                AlertDialog.Builder(it)
                         builder.setTitle(defaultPermissionDialogTitle)
                         builder.setMessage(defaultPermissionDialogMessage)
                         builder.setPositiveButton("Ok", null)
@@ -314,12 +334,12 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
         private fun arePermissionsGranted(): Boolean {
             currentActivity?.let {
                 return ContextCompat.checkSelfPermission(
-                    it,
-                    Manifest.permission.ACCESS_FINE_LOCATION
+                        it,
+                        Manifest.permission.ACCESS_FINE_LOCATION
                 ) == PackageManager.PERMISSION_GRANTED &&
                         ContextCompat.checkSelfPermission(
-                            it,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
+                                it,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
                         ) == PackageManager.PERMISSION_GRANTED
             }
             return false
@@ -330,8 +350,8 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
             currentActivity?.let {
                 return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     ContextCompat.checkSelfPermission(
-                        it,
-                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                            it,
+                            Manifest.permission.ACCESS_BACKGROUND_LOCATION
                     ) == PackageManager.PERMISSION_GRANTED
                 } else {
                     return true
@@ -354,17 +374,15 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
             fun setEventSink(events: EventChannel.EventSink?)
             fun addBeaconLayout(layout: String)
             fun setForegroundScanPeriod(
-                foregroundScanPeriod: Long,
-                foregroundBetweenScanPeriod: Long
+                    foregroundScanPeriod: Long,
+                    foregroundBetweenScanPeriod: Long
             )
 
             fun setBackgroundScanPeriod(
-                backgroundScanPeriod: Long,
-                backgroundBetweenScanPeriod: Long
+                    backgroundScanPeriod: Long,
+                    backgroundBetweenScanPeriod: Long
             )
         }
-
-        private var callBack: PluginImpl? = null
 
         fun sendBLEScannerReadyCallback() {
             channel?.invokeMethod("scannerReady", "")
@@ -432,9 +450,9 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
 
 
     override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
+            requestCode: Int,
+            permissions: Array<out String>,
+            grantResults: IntArray
     ): Boolean {
         if (requestCode == REQUEST_LOCATION_PERMISSIONS && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             doIfPermissionsGranted()
