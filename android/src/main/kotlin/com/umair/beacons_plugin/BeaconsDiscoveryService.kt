@@ -27,9 +27,6 @@ class BeaconsDiscoveryService : Service() {
         @JvmStatic
         private var serviceNotificationContent = "Looking for nearby beacons"
 
-        @JvmStatic
-        private var instance: BeaconsDiscoveryService? = null;
-
         fun setForegroundServiceNotification(title: String, content: String) {
             serviceNotificationTitle = title
             serviceNotificationContent = content
@@ -39,7 +36,6 @@ class BeaconsDiscoveryService : Service() {
     override fun onCreate() {
         super.onCreate()
         beaconHelper = BeaconHelper(this)
-        instance = this
 
         BeaconsPlugin.messenger?.let {
             Log.i(TAG, "$TAG service running. Send Callback")

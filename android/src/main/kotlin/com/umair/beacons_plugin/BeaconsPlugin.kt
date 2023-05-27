@@ -189,7 +189,7 @@ class BeaconsPlugin : FlutterPlugin, ActivityAware,
                         result.success("setBackgroundScanPeriod updated.")
                     }
                     call.method == "setForegroundServiceNotification" -> {
-                        val title = call.argument<String>("title")!!;
+                        val title = call.argument<String>("title")!!; // Cannot be null as it is required in the Dart side.
                         val content = call.argument<String>("content")!!;
                         BeaconsDiscoveryService.setForegroundServiceNotification(title, content);
                         result.success("setForegroundServiceNotification updated.")
